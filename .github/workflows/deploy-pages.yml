@@ -31,6 +31,8 @@ jobs:
         run: npm run build
       - name: Configure Pages
         uses: actions/configure-pages@v5
+      - name: Keep static asset directories
+        run: touch dist/client/.nojekyll
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
