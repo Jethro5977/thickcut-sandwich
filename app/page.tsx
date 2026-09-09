@@ -25,10 +25,12 @@ const items: Item[] = [
 const filters = ['全部', '甜系', '水果', '咸香', '高蛋白', '经典'];
 const kcalTone = (kcal: number) => kcal < 450 ? 'low' : kcal <= 500 ? 'mid' : 'high';
 const assetPath = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}${path}`;
-const pickupOptions = Array.from({ length: 53 }, (_, index) => {
+const pickupOptions = Array.from({ length: 33 }, (_, index) => {
   const minutes = 9 * 60 + index * 15;
   return `今天 ${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 });
+
+type Order = { id: string; price: number; kcal: number; items: string; note: string };
 
 type WebMcpTool = { name: string; title: string; description: string; inputSchema: object; annotations: { readOnlyHint: boolean; untrustedContentHint: boolean }; execute: (input: unknown) => unknown };
 declare global { interface Document { modelContext?: { registerTool: (tool: WebMcpTool, options?: { signal?: AbortSignal }) => void | Promise<void> } } }
@@ -41,7 +43,7 @@ export default function HomePage() {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [note, setNote] = useState('');
   const [pickup, setPickup] = useState('今天 14:30');
-  const [order, setOrder] = useState<{ id: string; price: number; kcal: number } | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [addedId, setAddedId] = useState<number | null>(null);
 
   const selected = items.find((item) => item.id === selectedId) ?? items[0];
@@ -54,7 +56,7 @@ export default function HomePage() {
   const bump = (id: number, amount: number) => setCart((current) => { const next = { ...current }; const value = (next[id] ?? 0) + amount; if (value <= 0) delete next[id]; else next[id] = value; return next; });
   const addFromMenu = (id: number) => { bump(id, 1); setAddedId(id); window.setTimeout(() => setAddedId((current) => current === id ? null : current), 1400); };
   const addSelected = () => { bump(selected.id, detailQty); go('cart'); };
-  const submit = () => { setOrder({ id: `FA${Math.floor(Math.random() * 9000 + 1000)}`, price: totals.price, kcal: totals.kcal }); setCart({}); go('done'); };
+  const submit = () => { setOrder({ id: `FA${Math.floor(Math.random() * 9000 + 1000)}`, price: totals.price, kcal: totals.kcal, items: lines.map((item) => `${item.name} × ${cart[item.id]}`).join("、"), note }); setCart({}); go('done'); };
 
   useEffect(() => {
     const context = document.modelContext;
@@ -128,12 +130,12 @@ function DetailScreen({ item, qty, setQty, onAdd }: { item: Item; qty: number; s
 
 function CartScreen({ lines, cart, totals, note, setNote, pickup, setPickup, bump, onMenu, onOpen, onSubmit }: { lines: Item[]; cart: Record<number, number>; totals: { count: number; price: number; kcal: number }; note: string; setNote: (value: string) => void; pickup: string; setPickup: (value: string) => void; bump: (id: number, amount: number) => void; onMenu: () => void; onOpen: (id: number) => void; onSubmit: () => void }) {
   if (!lines.length) return <section className="empty-screen"><div className="empty-icon"><ShoppingBag /></div><h1>购物车还是空的</h1><p>去菜单挑一份厚切三明治吧<br />每一款都真材实料、热量透明</p><button onClick={onMenu}>浏览菜单 <ChevronRight /></button><div className="quick-title">热销推荐</div><div className="quick-grid">{[items[2], items[7], items[0]].map((item) => <button key={item.id} onClick={() => onOpen(item.id)}><img src={assetPath(item.image)} alt="" /><span>{item.name}</span><b>¥{item.price}</b></button>)}</div></section>;
-  return <section className="cart-screen"><div className="page-title"><small>YOUR ORDER</small><h1>预约清单</h1><p>{totals.count} 份三明治，确认后为你新鲜制作</p></div><div className="cart-list">{lines.map((item) => <article key={item.id}><button className="cart-photo" onClick={() => onOpen(item.id)}><img src={assetPath(item.image)} alt="" /></button><div className="cart-copy"><strong>{item.name}</strong><span>{item.kcal * cart[item.id]} kcal · ¥{item.price * cart[item.id]}</span></div><div className="stepper"><button aria-label={`减少${item.name}`} onClick={() => bump(item.id, -1)}><Minus /></button><b>{cart[item.id]}</b><button aria-label={`增加${item.name}`} onClick={() => bump(item.id, 1)}><Plus /></button></div></article>)}</div><div className="order-card"><div className="summary-title"><span>本单合计</span><b>{totals.kcal} <small>kcal</small></b><strong>¥{totals.price}</strong></div><label><span><Clock3 />预计自取时间</span><select value={pickup} onChange={(event) => setPickup(event.target.value)} aria-label="预计自取时间">{pickupOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label><label><span><Info />订单备注</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="例：沙拉酱减半、切开、不要黄瓜…" /></label></div><button className="checkout" onClick={onSubmit}>提交预约 · ¥{totals.price}<ChevronRight /></button><p className="checkout-note">提交后请通过微信确认，自取前 10 分钟现做</p></section>;
+  return <section className="cart-screen"><div className="page-title"><small>YOUR ORDER</small><h1>预约清单</h1><p>{totals.count} 份三明治，请生成清单后联系商家确认</p></div><div className="cart-list">{lines.map((item) => <article key={item.id}><button className="cart-photo" onClick={() => onOpen(item.id)}><img src={assetPath(item.image)} alt="" /></button><div className="cart-copy"><strong>{item.name}</strong><span>{item.kcal * cart[item.id]} kcal · ¥{item.price * cart[item.id]}</span></div><div className="stepper"><button aria-label={`减少${item.name}`} onClick={() => bump(item.id, -1)}><Minus /></button><b>{cart[item.id]}</b><button aria-label={`增加${item.name}`} onClick={() => bump(item.id, 1)}><Plus /></button></div></article>)}</div><div className="order-card"><div className="summary-title"><span>本单合计</span><b>{totals.kcal} <small>kcal</small></b><strong>¥{totals.price}</strong></div><label><span><Clock3 />预计自取时间</span><select value={pickup} onChange={(event) => setPickup(event.target.value)} aria-label="预计自取时间">{pickupOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label><label><span><Info />订单备注</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="例：沙拉酱减半、切开、不要黄瓜…" /></label></div><button className="checkout" onClick={onSubmit}>生成预约清单 · ¥{totals.price}<ChevronRight /></button><p className="checkout-note">清单仅在本机生成，请截图发送微信并等待商家确认</p></section>;
 }
 
 function AboutScreen() { return <section className="about-screen"><div className="about-photo"><img src={assetPath('/images/menu-08.png')} alt="抹茶红豆乳酪三明治" /><span>从一份认真称重的早餐开始</span></div><div className="page-title"><small>ABOUT FAFA</small><h1>FaFa 的坚持</h1></div><p className="about-copy">从家庭厨房开始，八款配方反复调整。每一种食材上秤称重后才夹进面包——所以我们敢把克重和热量都写在菜单上。</p><div className="values"><article><span><Wheat /></span><div><h2>称重出品</h2><p>食材按配方称重，热量误差尽量控制在 ±10% 内。</p></div></article><article><span><Leaf /></span><div><h2>清爽酱料</h2><p>自制低卡沙拉酱与蜂蜜芥末，甜系使用代糖。</p></div></article><article><span><Sparkles /></span><div><h2>当日现做</h2><p>不隔夜、不预制，确认预约后再组装。</p></div></article></div><div className="contact-card"><img src={assetPath('/images/order-qr.png')} alt="菜单二维码" /><div><small>CONTACT US</small><strong>微信：TwiceTwice1 / DoncicX</strong><span>营业 09:00–17:00（周一休）<br />预约自取 · 3 公里内配送</span></div></div><p className="estimate-note">孕期、过敏或特殊饮食需求请提前告知</p></section>; }
 
-function DoneScreen({ order, pickup, onMenu }: { order: { id: string; price: number; kcal: number } | null; pickup: string; onMenu: () => void }) { return <section className="done-screen"><div className="done-check"><Check /></div><small>RESERVATION RECEIVED</small><h1>已收到你的预约</h1><p>请在微信上发送订单号，确认自取时间。<br />三明治将在你到店前 10 分钟现做。</p><div className="receipt"><div><span>订单号</span><strong>{order?.id}</strong></div><div><span>预计自取</span><strong>{pickup}</strong></div><div><span>合计</span><strong>¥{order?.price}</strong></div><div><span>总热量</span><strong>{order?.kcal} kcal</strong></div></div><div className="done-contact"><CircleUserRound /><div><span>添加微信确认预约</span><strong>TwiceTwice1 / DoncicX</strong></div></div><button onClick={onMenu}>继续浏览菜单</button></section>; }
+function DoneScreen({ order, pickup, onMenu }: { order: Order | null; pickup: string; onMenu: () => void }) { return <section className="done-screen"><div className="done-check"><Check /></div><small>ORDER SUMMARY</small><h1>预约清单已生成</h1><p>此清单尚未发送给商家，请截图发送至微信。<br />收到商家回复后，预约才算确认。</p><div className="receipt"><div><span>菜品</span><strong>{order?.items}</strong></div>{order?.note && <div><span>备注</span><strong>{order.note}</strong></div>}<div><span>清单编号</span><strong>{order?.id}</strong></div><div><span>预计自取</span><strong>{pickup}</strong></div><div><span>合计</span><strong>¥{order?.price}</strong></div><div><span>总热量</span><strong>{order?.kcal} kcal</strong></div></div><div className="done-contact"><CircleUserRound /><div><span>添加微信确认预约</span><strong>TwiceTwice1 / DoncicX</strong></div></div><button onClick={onMenu}>继续浏览菜单</button></section>; }
 
 function TabBar({ screen, count, go }: { screen: Screen; count: number; go: (screen: Screen) => void }) {
   const tabs: { key: Screen; label: string; icon: typeof Home }[] = [{ key: 'home', label: '首页', icon: Home }, { key: 'menu', label: '菜单', icon: UtensilsCrossed }, { key: 'cart', label: '购物车', icon: ShoppingBag }, { key: 'about', label: '我们', icon: Leaf }];

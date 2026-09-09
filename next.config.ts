@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // The menu is fully client-side, so it can be published directly to GitHub Pages.
+  // Publish the exported public directory through Sites static hosting.
   output: 'export',
   trailingSlash: true,
 };
