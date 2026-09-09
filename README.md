@@ -1,8 +1,8 @@
 # FaFa 厚切三明治
 
-线上菜单：https://thickcut-sandwich-menu.xyuu0074.chatgpt.site
+线上菜单：https://thickcut-sandwich.pages.dev
 
-网站通过 Sites 静态托管发布，不再使用 GitHub 用户主页作为访问入口。GitHub Actions 用于验证构建。
+网站通过 Cloudflare Pages 静态托管发布，不再使用 GitHub 用户主页作为访问入口。GitHub Actions 用于验证构建。
 
 ## 开发与部署
 
