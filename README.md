@@ -9,7 +9,7 @@
 - Node.js 22，使用 `npm ci` 安装锁定依赖。
 - `npm run dev` 本地开发；`npm run build` 生成 `dist/client/index.html` 和静态资源。
 - `.openai/hosting.json` 的 `static.directory` 指向 `dist/client`。
-- Cloudflare Pages 生产地址为 `https://thickcut-sandwich.pages.dev`；发布前先构建 `dist/client`，再通过 Wrangler 上传该目录。
+- Cloudflare Pages 生产地址为 `https://thickcut-sandwich.pages.dev`；`http://thickcut-sandwich.pages.dev/` 会自动跳转到该 HTTPS 正式地址。发布前先构建 `dist/client`，再通过 Wrangler 上传该目录。
 - 更新域名时同时重新生成 `public/images/order-qr.png`。
 
 ## 到店自取与点餐二维码
