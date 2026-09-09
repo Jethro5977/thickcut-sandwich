@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Check, ChevronRight, CircleUserRound, Clock3, Home, Info, Leaf, Minus, Plus, ShoppingBag, Sparkles, UtensilsCrossed, Wheat, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronRight, CircleUserRound, Clock3, Home, Info, Leaf, Minus, Plus, ShoppingBag, Sparkles, UtensilsCrossed, Wheat } from 'lucide-react';
 
 type Screen = 'home' | 'menu' | 'detail' | 'cart' | 'about' | 'done';
 type Item = {
@@ -25,6 +25,10 @@ const items: Item[] = [
 const filters = ['全部', '甜系', '水果', '咸香', '高蛋白', '经典'];
 const kcalTone = (kcal: number) => kcal < 450 ? 'low' : kcal <= 500 ? 'mid' : 'high';
 const assetPath = (path: string) => `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}${path}`;
+const pickupOptions = Array.from({ length: 53 }, (_, index) => {
+  const minutes = 9 * 60 + index * 15;
+  return `今天 ${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+});
 
 type WebMcpTool = { name: string; title: string; description: string; inputSchema: object; annotations: { readOnlyHint: boolean; untrustedContentHint: boolean }; execute: (input: unknown) => unknown };
 declare global { interface Document { modelContext?: { registerTool: (tool: WebMcpTool, options?: { signal?: AbortSignal }) => void | Promise<void> } } }
@@ -38,6 +42,7 @@ export default function HomePage() {
   const [note, setNote] = useState('');
   const [pickup, setPickup] = useState('今天 14:30');
   const [order, setOrder] = useState<{ id: string; price: number; kcal: number } | null>(null);
+  const [addedId, setAddedId] = useState<number | null>(null);
 
   const selected = items.find((item) => item.id === selectedId) ?? items[0];
   const visible = items.filter((item) => filter === '全部' || item.tag === filter);
@@ -47,6 +52,7 @@ export default function HomePage() {
   const go = (next: Screen) => { setScreen(next); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const openItem = (id: number) => { setSelectedId(id); setDetailQty(1); go('detail'); };
   const bump = (id: number, amount: number) => setCart((current) => { const next = { ...current }; const value = (next[id] ?? 0) + amount; if (value <= 0) delete next[id]; else next[id] = value; return next; });
+  const addFromMenu = (id: number) => { bump(id, 1); setAddedId(id); window.setTimeout(() => setAddedId((current) => current === id ? null : current), 1400); };
   const addSelected = () => { bump(selected.id, detailQty); go('cart'); };
   const submit = () => { setOrder({ id: `FA${Math.floor(Math.random() * 9000 + 1000)}`, price: totals.price, kcal: totals.kcal }); setCart({}); go('done'); };
 
@@ -63,7 +69,7 @@ export default function HomePage() {
         if (!Array.isArray(payload.items) || !payload.items.length) throw new Error('请至少选择一款三明治');
         const next: Record<number, number> = {};
         for (const line of payload.items) { if (!Number.isInteger(line.id) || !Number.isInteger(line.quantity) || !items.some((item) => item.id === line.id) || (line.quantity ?? 0) < 1 || (line.quantity ?? 0) > 20) throw new Error('菜品编号或数量无效'); next[line.id!] = line.quantity!; }
-        setCart(next); setNote(payload.note ?? ''); if (payload.pickup) setPickup(payload.pickup); setScreen('cart');
+        setCart(next); setNote(payload.note ?? ''); if (payload.pickup && pickupOptions.includes(payload.pickup)) setPickup(payload.pickup); setScreen('cart');
         const result = items.filter((item) => next[item.id]).reduce((sum, item) => ({ count: sum.count + next[item.id], price: sum.price + item.price * next[item.id], kcal: sum.kcal + item.kcal * next[item.id] }), { count: 0, price: 0, kcal: 0 });
         return { status: 'staged', ...result, currency: 'CNY' };
       },
@@ -79,7 +85,7 @@ export default function HomePage() {
 
       <div className="screen-area">
         {screen === 'home' && <HomeScreen onMenu={() => go('menu')} onOpen={openItem} />}
-        {screen === 'menu' && <MenuScreen filter={filter} setFilter={setFilter} visible={visible} onOpen={openItem} onAdd={(id) => bump(id, 1)} />}
+        {screen === 'menu' && <MenuScreen filter={filter} setFilter={setFilter} visible={visible} onOpen={openItem} onAdd={addFromMenu} addedId={addedId} />}
         {screen === 'detail' && <DetailScreen item={selected} qty={detailQty} setQty={setDetailQty} onAdd={addSelected} />}
         {screen === 'cart' && <CartScreen lines={lines} cart={cart} totals={totals} note={note} setNote={setNote} pickup={pickup} setPickup={setPickup} bump={bump} onMenu={() => go('menu')} onOpen={openItem} onSubmit={submit} />}
         {screen === 'about' && <AboutScreen />}
@@ -112,8 +118,8 @@ function HomeScreen({ onMenu, onOpen }: { onMenu: () => void; onOpen: (id: numbe
   </section>;
 }
 
-function MenuScreen({ filter, setFilter, visible, onOpen, onAdd }: { filter: string; setFilter: (value: string) => void; visible: Item[]; onOpen: (id: number) => void; onAdd: (id: number) => void }) {
-  return <section className="menu-screen"><div className="menu-heading"><small>OUR MENU</small><h1>今天想吃哪一款？</h1><p>点击菜品查看完整用料与营养估算</p></div><div className="filter-row">{filters.map((value) => <button key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{value}</button>)}</div><div className="menu-grid">{visible.map((item) => <article className="dish-card" key={item.id}><button className="dish-main" onClick={() => onOpen(item.id)}><div className="dish-image"><img src={assetPath(item.image)} alt={item.name} /><span className="tag">{item.tag}</span><span className={`kcal ${kcalTone(item.kcal)}`}><b>{item.kcal}</b> kcal</span></div><div className="dish-copy"><h2>{item.name}</h2><p>{item.summary}</p></div></button><div className="dish-footer"><div><strong>¥{item.price}</strong><small>{item.weight}</small></div><button onClick={() => onAdd(item.id)} aria-label={`加入${item.name}`}><Plus />加入</button></div></article>)}</div><p className="estimate-note">所有热量与营养数据均按现有配方克重估算，实际可能有 ±10% 浮动</p></section>;
+function MenuScreen({ filter, setFilter, visible, onOpen, onAdd, addedId }: { filter: string; setFilter: (value: string) => void; visible: Item[]; onOpen: (id: number) => void; onAdd: (id: number) => void; addedId: number | null }) {
+  return <section className="menu-screen"><div className="menu-heading"><small>OUR MENU</small><h1>今天想吃哪一款？</h1><p>点击菜品查看完整用料与营养估算</p></div><div className="filter-row">{filters.map((value) => <button key={value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{value}</button>)}</div><div className="menu-grid">{visible.map((item) => <article className="dish-card" key={item.id}><button className="dish-main" onClick={() => onOpen(item.id)}><div className="dish-image"><img src={assetPath(item.image)} alt={item.name} /><span className="tag">{item.tag}</span><span className={`kcal ${kcalTone(item.kcal)}`}><b>{item.kcal}</b> kcal</span></div><div className="dish-copy"><h2>{item.name}</h2><p>{item.summary}</p></div></button><div className="dish-footer"><div><strong>¥{item.price}</strong><small>{item.weight}</small></div><button className={addedId === item.id ? 'added' : ''} onClick={() => onAdd(item.id)} aria-label={addedId === item.id ? `${item.name}已添加` : `加入${item.name}`}>{addedId === item.id ? <><Check />已添加</> : <><Plus />加入</>}</button></div></article>)}</div><p className="estimate-note">所有热量与营养数据均按现有配方克重估算，实际可能有 ±10% 浮动</p></section>;
 }
 
 function DetailScreen({ item, qty, setQty, onAdd }: { item: Item; qty: number; setQty: (value: number) => void; onAdd: () => void }) {
@@ -122,7 +128,7 @@ function DetailScreen({ item, qty, setQty, onAdd }: { item: Item; qty: number; s
 
 function CartScreen({ lines, cart, totals, note, setNote, pickup, setPickup, bump, onMenu, onOpen, onSubmit }: { lines: Item[]; cart: Record<number, number>; totals: { count: number; price: number; kcal: number }; note: string; setNote: (value: string) => void; pickup: string; setPickup: (value: string) => void; bump: (id: number, amount: number) => void; onMenu: () => void; onOpen: (id: number) => void; onSubmit: () => void }) {
   if (!lines.length) return <section className="empty-screen"><div className="empty-icon"><ShoppingBag /></div><h1>购物车还是空的</h1><p>去菜单挑一份厚切三明治吧<br />每一款都真材实料、热量透明</p><button onClick={onMenu}>浏览菜单 <ChevronRight /></button><div className="quick-title">热销推荐</div><div className="quick-grid">{[items[2], items[7], items[0]].map((item) => <button key={item.id} onClick={() => onOpen(item.id)}><img src={assetPath(item.image)} alt="" /><span>{item.name}</span><b>¥{item.price}</b></button>)}</div></section>;
-  return <section className="cart-screen"><div className="page-title"><small>YOUR ORDER</small><h1>预约清单</h1><p>{totals.count} 份三明治，确认后为你新鲜制作</p></div><div className="cart-list">{lines.map((item) => <article key={item.id}><button className="cart-photo" onClick={() => onOpen(item.id)}><img src={assetPath(item.image)} alt="" /></button><div className="cart-copy"><strong>{item.name}</strong><span>{item.kcal * cart[item.id]} kcal · ¥{item.price * cart[item.id]}</span></div><div className="stepper"><button onClick={() => bump(item.id, -1)}><Minus /></button><b>{cart[item.id]}</b><button onClick={() => bump(item.id, 1)}><Plus /></button></div></article>)}</div><div className="order-card"><div className="summary-title"><span>本单合计</span><b>{totals.kcal} <small>kcal</small></b><strong>¥{totals.price}</strong></div><label><span><Clock3 />预计自取时间</span><input value={pickup} onChange={(event) => setPickup(event.target.value)} placeholder="如：今天 14:30" /></label><label><span><Info />订单备注</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="例：沙拉酱减半、切开、不要黄瓜…" /></label></div><button className="checkout" onClick={onSubmit}>提交预约 · ¥{totals.price}<ChevronRight /></button><p className="checkout-note">提交后请通过微信确认，自取前 10 分钟现做</p></section>;
+  return <section className="cart-screen"><div className="page-title"><small>YOUR ORDER</small><h1>预约清单</h1><p>{totals.count} 份三明治，确认后为你新鲜制作</p></div><div className="cart-list">{lines.map((item) => <article key={item.id}><button className="cart-photo" onClick={() => onOpen(item.id)}><img src={assetPath(item.image)} alt="" /></button><div className="cart-copy"><strong>{item.name}</strong><span>{item.kcal * cart[item.id]} kcal · ¥{item.price * cart[item.id]}</span></div><div className="stepper"><button aria-label={`减少${item.name}`} onClick={() => bump(item.id, -1)}><Minus /></button><b>{cart[item.id]}</b><button aria-label={`增加${item.name}`} onClick={() => bump(item.id, 1)}><Plus /></button></div></article>)}</div><div className="order-card"><div className="summary-title"><span>本单合计</span><b>{totals.kcal} <small>kcal</small></b><strong>¥{totals.price}</strong></div><label><span><Clock3 />预计自取时间</span><select value={pickup} onChange={(event) => setPickup(event.target.value)} aria-label="预计自取时间">{pickupOptions.map((option) => <option key={option} value={option}>{option}</option>)}</select></label><label><span><Info />订单备注</span><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="例：沙拉酱减半、切开、不要黄瓜…" /></label></div><button className="checkout" onClick={onSubmit}>提交预约 · ¥{totals.price}<ChevronRight /></button><p className="checkout-note">提交后请通过微信确认，自取前 10 分钟现做</p></section>;
 }
 
 function AboutScreen() { return <section className="about-screen"><div className="about-photo"><img src={assetPath('/images/menu-08.png')} alt="抹茶红豆乳酪三明治" /><span>从一份认真称重的早餐开始</span></div><div className="page-title"><small>ABOUT FAFA</small><h1>FaFa 的坚持</h1></div><p className="about-copy">从家庭厨房开始，八款配方反复调整。每一种食材上秤称重后才夹进面包——所以我们敢把克重和热量都写在菜单上。</p><div className="values"><article><span><Wheat /></span><div><h2>称重出品</h2><p>食材按配方称重，热量误差尽量控制在 ±10% 内。</p></div></article><article><span><Leaf /></span><div><h2>清爽酱料</h2><p>自制低卡沙拉酱与蜂蜜芥末，甜系使用代糖。</p></div></article><article><span><Sparkles /></span><div><h2>当日现做</h2><p>不隔夜、不预制，确认预约后再组装。</p></div></article></div><div className="contact-card"><img src={assetPath('/images/order-qr.png')} alt="菜单二维码" /><div><small>CONTACT US</small><strong>微信：TwiceTwice1 / DoncicX</strong><span>营业 09:00–17:00（周一休）<br />预约自取 · 3 公里内配送</span></div></div><p className="estimate-note">孕期、过敏或特殊饮食需求请提前告知</p></section>; }

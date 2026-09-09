@@ -13,3 +13,13 @@
 .tab-bar{position:fixed;z-index:35;left:50%;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);width:min(100%,430px);height:74px;padding:8px 7px max(10px,env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(250,248,245,.94);transform:translateX(-50%);backdrop-filter:blur(15px)}.tab-bar button{display:flex;flex-direction:column;align-items:center;gap:4px;border:0;color:#aaa096;background:none}.tab-bar button.active{color:var(--green)}.tab-bar button>span{position:relative;display:grid;place-items:center;height:24px}.tab-bar svg{width:19px}.tab-bar small{font-size:10px}.tab-bar b{right:-13px;top:-5px}
 @media(min-width:760px){.app-shell{margin:26px auto;border-radius:28px;overflow:hidden;min-height:calc(100dvh - 52px)}.tab-bar{bottom:26px;border-radius:0 0 28px 28px}.detail-action{bottom:26px}.dish-image{height:270px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Interaction polish */
+.dish-footer>button{transition:transform .18s ease,background .18s ease,box-shadow .18s ease}
+.dish-footer>button:active{transform:scale(.94)}
+.dish-footer>button.added{background:var(--deep);box-shadow:0 0 0 4px rgba(111,159,116,.14);animation:added-pop .32s ease-out}
+.dish-footer>button.added svg{animation:added-check .35s ease-out}
+@keyframes added-pop{0%{transform:scale(.92)}65%{transform:scale(1.06)}100%{transform:scale(1)}}
+@keyframes added-check{from{opacity:0;transform:scale(.5) rotate(-20deg)}to{opacity:1;transform:none}}
+.order-card select{width:100%;padding:11px 34px 11px 12px;border:1px solid var(--line);border-radius:11px;color:var(--brown);background:var(--cream);outline:none;font-size:13px;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 16px) 50%,calc(100% - 11px) 50%;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+.order-card select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(111,159,116,.1)}
