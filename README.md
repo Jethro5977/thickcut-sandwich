@@ -9,7 +9,7 @@
 - Node.js 22，使用 `npm ci` 安装锁定依赖。
 - `npm run dev` 本地开发；`npm run build` 生成 `dist/client/index.html` 和静态资源。
 - `.openai/hosting.json` 的 `static.directory` 指向 `dist/client`。
-- Sites 发布需推送相同源码版本并上传该版本的静态产物。
+- Cloudflare Pages 生产地址为 `https://thickcut-sandwich.pages.dev`；发布前先构建 `dist/client`，再通过 Wrangler 上传该目录。
 - 更新域名时同时重新生成 `public/images/order-qr.png`。
 
 ## 到店自取与点餐二维码
@@ -27,4 +27,4 @@
 
 ## 原 404 原因
 
-GitHub Pages 配置为从 main 分支根目录发布，而应用首页实际在构建输出 `dist/client`。源码根目录没有 `index.html`，导致原地址返回 404。现已改用独立 Sites 网址，并移除错误的 Pages 发布流程。
+GitHub Pages 配置为从 main 分支根目录发布，而应用首页实际在构建输出 `dist/client`。源码根目录没有 `index.html`，导致原地址返回 404。现已改用独立 Cloudflare Pages 网址，并移除错误的 Pages 发布流程。
