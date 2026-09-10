@@ -99,7 +99,7 @@ export default function HomePage() {
   );
 }
 
-function Logo() { return <div className="logo"><span><Leaf /></span><div><strong>FaFa</strong><small>厚切 · 健康三明治</small></div></div>; }
+function Logo() { return <div className="logo"><span className="logo-mark"><img src={assetPath('/images/fafa-logo.jpg')} alt="FaFa 品牌标志" /></span><div><strong>FaFa</strong><small>厚切 · 健康三明治</small></div></div>; }
 
 function Header({ cartCount, onCart }: { cartCount: number; onCart: () => void }) {
   return <header className="header"><Logo /><button className="today" onClick={onCart}><i />今日现做{cartCount > 0 && <b>{cartCount}</b>}</button></header>;
@@ -112,7 +112,7 @@ function DetailHeader({ cartCount, onBack, onCart }: { cartCount: number; onBack
 function HomeScreen({ onMenu, onOpen }: { onMenu: () => void; onOpen: (id: number) => void }) {
   const featured = [items[7], items[5], items[2]];
   return <section className="home-screen">
-    <div className="home-hero"><span className="hero-leaf"><Leaf /></span><p>FRESHLY MADE TODAY</p><h1>厚切，<br /><em>也可以很轻盈。</em></h1><div className="hero-copy">每一份都称重、记录、公开热量。<br />真材实料，吃得饱也吃得明白。</div><button onClick={onMenu}>浏览今日菜单 <ChevronRight /></button><div className="hero-rings" /></div>
+    <div className="home-hero"><span className="hero-logo"><img src={assetPath('/images/fafa-logo.jpg')} alt="FaFa 品牌标志" /></span><p>FRESHLY MADE TODAY</p><h1>厚切，<br /><em>也可以很轻盈。</em></h1><div className="hero-copy">每一份都称重、记录、公开热量。<br />真材实料，吃得饱也吃得明白。</div><button onClick={onMenu}>浏览今日菜单 <ChevronRight /></button><div className="hero-rings" /></div>
     <div className="metrics"><div><strong>300–650</strong><small>kcal 热量区间</small></div><div><strong>8 款</strong><small>当季固定菜单</small></div><div><strong>现做</strong><small>预约后再组装</small></div></div>
     <div className="block-title"><div><small>WEEKLY PICKS</small><h2>本周推荐</h2></div><button onClick={onMenu}>全部 8 款 <ChevronRight /></button></div>
     <div className="featured-row">{featured.map((item) => <button className="featured-card" key={item.id} onClick={() => onOpen(item.id)}><img src={assetPath(item.image)} alt="" /><span>{item.name}</span><div><b>¥{item.price}</b><small>{item.kcal} kcal</small></div></button>)}</div>
