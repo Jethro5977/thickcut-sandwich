@@ -99,7 +99,7 @@ export default function HomePage() {
   );
 }
 
-function Logo() { return <div className="logo"><span className="logo-mark"><img src={assetPath('/images/fafa-logo.jpg')} alt="FaFa 品牌标志" /></span><div><strong>FaFa</strong><small>厚切 · 健康三明治</small></div></div>; }
+function Logo() { return <div className="logo"><span className="logo-mark"><img src={assetPath('/images/fafa-mark.jpg')} alt="FaFa 花朵标志" /></span><div><strong>FaFa</strong><small>厚切 · 健康三明治</small></div></div>; }
 
 function Header({ cartCount, onCart }: { cartCount: number; onCart: () => void }) {
   return <header className="header"><Logo /><button className="today" onClick={onCart}><i />今日现做{cartCount > 0 && <b>{cartCount}</b>}</button></header>;

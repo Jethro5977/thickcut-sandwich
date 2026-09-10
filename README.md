@@ -18,6 +18,7 @@
 - 首页和“我们”页面的二维码均指向线上菜单；顾客扫码后即可浏览菜单、选择菜品并生成预约清单。
 - `public/images/order-qr-poster.png` 为可供打印和分享的品牌二维码海报，扫码目标同样为正式线上菜单地址。
 - `public/images/fafa-logo.jpg` 为品牌 Logo，已用于网站页首和首页主视觉。
+- `public/images/fafa-mark.jpg` 为独立花朵标记，页首使用它来保持完整比例；首页主视觉继续显示完整组合 Logo。
 
 ## 预约边界
 
